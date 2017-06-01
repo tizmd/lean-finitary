@@ -1,0 +1,6 @@
+[package]
+name = "finitary"
+version = "0.1"
+
+[dependencies]
+library_dev = {git = "https://github.com/leanprover/library_dev.git", rev = "3280de5edb28909fb628c7f869118a8be8f5f2fc"}
