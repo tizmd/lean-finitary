@@ -4,3 +4,4 @@ version = "0.1"
 
 [dependencies]
 library_dev = {git = "https://github.com/leanprover/library_dev.git", rev = "3280de5edb28909fb628c7f869118a8be8f5f2fc"}
+list-distinct = {git = "https://github.com/tizmd/lean-list-disinct.git", rev = "6111d3fbcb9b50af7177c2525b9596c25fc4def2"}
