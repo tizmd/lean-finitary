@@ -1,4 +1,5 @@
 import equivalent data.fin.misc
+import data.list.distinct
 universe u
 
 class fintype (α : Type u) := 
