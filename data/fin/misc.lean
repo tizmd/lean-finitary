@@ -1,6 +1,5 @@
-import function.isomorphism data.list.distinct
+import function.bijection data.list.set data.fin
 open fin function
-
 
 
 namespace fin
@@ -80,12 +79,12 @@ lemma idem : ∀ i, swap k (swap k i) = i
 
 lemma has_left_inverse  : has_left_inverse (swap k) := ⟨ swap k, idem ⟩         
 lemma has_right_inverse  :  has_right_inverse (swap k) := ⟨ swap k, idem ⟩  
-lemma has_isomorphism : has_isomorphism (swap k) := ⟨ swap k,  idem , idem ⟩ 
+lemma has_isomorphism : has_bijection(swap k) := ⟨ swap k,  idem , idem ⟩ 
 
 lemma injective : injective (swap k) := injective_of_has_left_inverse has_left_inverse
 lemma surjective : surjective (swap k) := surjective_of_has_right_inverse has_right_inverse
 
-instance : isomorphism (swap k) := ⟨ swap k, idem , idem ⟩ 
+instance : bijection (swap k) := ⟨ swap k, idem , idem ⟩ 
 
 lemma k_eq_zero : swap k k = 0 := by simp [swap]
 lemma zero_eq_k : swap k 0 = k := if H : 0 = k then by simp_using_hs [swap] else by simp_using_hs [swap]
@@ -145,6 +144,9 @@ apply nat.pred_inj,
 }
 end
 
+/--
+ A proof of pigeonhole principle.
+-/
 theorem not_injective_of_gt {m n} (f : fin m → fin n) : m > n → ¬ injective f := 
 begin
   revert m,
@@ -194,14 +196,32 @@ begin
   }
 end
 
+
 def elems : ∀ n : ℕ, list (fin n)
 | 0 := []
 | (n+1) := 0 :: list.map fin.succ (elems n)
+
+lemma succ_ne_zero {n} (i : fin n) : fin.succ i ≠ 0 :=
+begin
+cases i,
+simp [fin.succ],
+apply fin.ne_of_vne,
+rw fin.val_zero,
+simp,
+apply nat.succ_ne_zero
+end
+
+lemma nodup_elems : ∀ n, list.nodup (elems n) 
+| 0     := list.nodup_nil
+| (n+1) := list.nodup_cons (λ h, exists.elim (list.exists_of_mem_map h) (λ i hp, succ_ne_zero _ hp.right)) 
+    (list.nodup_map succ.injective (nodup_elems n))
 
 def mem_elems : ∀ {n} (i : fin n), i ∈ elems n 
 | 0     ⟨_ , is_lt⟩ := absurd is_lt (nat.not_lt_zero _)
 | (n+1) ⟨0 , _⟩ := list.mem_cons_self _ _
 | (n+1) ⟨i + 1, is_lt⟩ := list.mem_cons_of_mem _ (list.mem_map fin.succ (mem_elems ⟨i, nat.le_of_succ_le_succ is_lt⟩))
+
+
 
 def {u} nth { α : Type u} : Π (l : list α), fin (list.length l) → α 
 | [] ⟨_, is_lt⟩  := absurd is_lt (nat.not_lt_zero _)
@@ -254,7 +274,7 @@ induction l with x xs iH,
 end
 
 
-lemma {u} nth_ne_nth_of_distinct_of_lt {α : Type u} {l : list α}  : Π {i j : fin (list.length l)}, distinct l → i < j → nth l i ≠ nth l j :=
+lemma {u} nth_ne_nth_of_nodup_of_lt {α : Type u} {l : list α}  : Π {i j : fin (list.length l)}, list.nodup l → i < j → nth l i ≠ nth l j :=
 begin
 induction l with x xs iH,
 {
@@ -279,24 +299,26 @@ induction l with x xs iH,
   cases i with i,
   {
     simp [nth] at Heq,
-    apply (not_mem_of_distinct_cons Hdis),
+    
+    apply (list.not_mem_of_nodup_cons Hdis),
     rw Heq,
     apply mem_nth
   },
   {
     simp [nth] at Heq,
     apply (@iH ⟨i, nat.lt_of_succ_lt_succ ilt⟩ ⟨nat.pred j, nat.lt_of_succ_lt_succ jlt⟩ ),
-    apply distinct_of_distinct_cons,
+    apply list.nodup_of_nodup_cons,
     assumption,
     exact (nat.lt_of_succ_lt_succ Hlt),
     assumption
   }
 }
 end
-lemma {u} left_index_mem_nth_left_inverse_of_distinct {α : Type u}[decidable_eq α]{l : list α} : distinct l → ∀ i, left_index (mem_nth l i) = i :=
+#check list.nodup
+lemma {u} left_index_mem_nth_left_inverse_of_nodup {α : Type u}[decidable_eq α]{l : list α} : list.nodup l → ∀ i, left_index (mem_nth l i) = i :=
 begin
 intros Hdis i,
-induction Hdis with x xs dxs Hx iH,
+induction Hdis with x xs Hx dxs iH,
 {
   exact (absurd i.is_lt (nat.not_lt_zero _))
 },
@@ -335,13 +357,14 @@ induction Hdis with x xs dxs Hx iH,
   }
 }
 end
-lemma {u} injective_nth_of_distinct {α : Type u}{l : list α} : distinct l → injective (nth l) :=
+lemma {u} injective_nth_of_nodup {α : Type u}{l : list α} : list.nodup l → injective (nth l) :=
   assume Hdis, take i j, assume H, 
       if Heq : i = j then Heq
-      else if Hlt : i < j then absurd H (nth_ne_nth_of_distinct_of_lt Hdis Hlt) 
+      else if Hlt : i < j then absurd H (nth_ne_nth_of_nodup_of_lt Hdis Hlt) 
       else have j < i, from or.resolve_left (lt_or_gt_of_ne Heq) Hlt,
-           absurd (eq.symm H) (nth_ne_nth_of_distinct_of_lt Hdis this)
-lemma length_le_of_distinct_fin {n} {l : list (fin n)} : distinct l → list.length l ≤ n :=
+           absurd (eq.symm H) (nth_ne_nth_of_nodup_of_lt Hdis this)
+
+lemma length_le_of_nodup_fin {n} {l : list (fin n)} : list.nodup l → list.length l ≤ n :=
 begin
  intro Hdis,
  induction l with x xs iH, 
@@ -367,10 +390,10 @@ begin
         },
        cases Ho with Hlt Hgt,
        {
-          exact (absurd Hf (nth_ne_nth_of_distinct_of_lt Hdis Hlt))
+          exact (absurd Hf (nth_ne_nth_of_nodup_of_lt Hdis Hlt))
        },
        {
-         exact (absurd (eq.symm Hf) (nth_ne_nth_of_distinct_of_lt Hdis Hgt))
+         exact (absurd (eq.symm Hf) (nth_ne_nth_of_nodup_of_lt Hdis Hgt))
        }
        
       },
