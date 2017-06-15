@@ -6,7 +6,7 @@ open function
 
 class equipotent (α : Sort u) (β : Sort v) := 
   (map : α → β)
-  (has_bijection : bijection map)
+  (bijection : bijection map)
 
 namespace equipotent
 variables {α : Sort u} {β : Sort v}
@@ -15,28 +15,37 @@ variables {α : Sort u} {β : Sort v}
 instance rfl : equipotent α α := 
   {
       map := id,
-      has_bijection := bijection.of_id
+      bijection := bijection.of_id
   }
 
 @[symm]
 instance symm (eqv : equipotent α β) : equipotent β α := 
  {
-     map := eqv.has_bijection.inv,
-     has_bijection := bijection.inverse eqv.has_bijection
+     map := eqv.bijection.inv,
+     bijection := eqv.bijection.inverse
  }
 
+instance equipotent_of_inhabited_subsingletons [inhabited α][subsingleton α ][inhabited β][subsingleton β] : equipotent α β 
+:= 
+{
+  map := λ a, default β,
+  bijection := {
+    inv := λ b, default α,
+    left_inverse_of_inv := λ a, subsingleton.elim _ a, 
+    right_inverse_of_inv := λ b, subsingleton.elim _ b, 
+  }
+}
  universe w
  variable {γ : Sort w}
  @[trans]
  instance trans (eqv₁ : equipotent α β) (eqv₂ : equipotent β γ) : equipotent α γ := 
  {
      map := eqv₂.map ∘ eqv₁.map,
-     has_bijection := bijection.comp eqv₁.has_bijection eqv₂.has_bijection
+     bijection := bijection.comp eqv₁.bijection eqv₂.bijection
  }
 
-
+ 
 end equipotent
-
 
 def is_equipotent (α : Sort u) (β : Sort v) := ∃ f : α → β, has_bijection f
 

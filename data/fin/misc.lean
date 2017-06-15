@@ -211,10 +211,12 @@ simp,
 apply nat.succ_ne_zero
 end
 
+/-
 lemma nodup_elems : ∀ n, list.nodup (elems n) 
 | 0     := list.nodup_nil
 | (n+1) := list.nodup_cons (λ h, exists.elim (list.exists_of_mem_map h) (λ i hp, succ_ne_zero _ hp.right)) 
     (list.nodup_map succ.injective (nodup_elems n))
+-/
 
 def mem_elems : ∀ {n} (i : fin n), i ∈ elems n 
 | 0     ⟨_ , is_lt⟩ := absurd is_lt (nat.not_lt_zero _)
