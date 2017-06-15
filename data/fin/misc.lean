@@ -316,7 +316,7 @@ induction l with x xs iH,
   }
 }
 end
-#check list.nodup
+
 lemma {u} left_index_mem_nth_left_inverse_of_nodup {α : Type u}[decidable_eq α]{l : list α} : list.nodup l → ∀ i, left_index (mem_nth l i) = i :=
 begin
 intros Hdis i,
